@@ -203,7 +203,7 @@ function Quiz() {
                 <div className="flex item-center gap-2 jutify-between">
                   <button
                     onClick={handleBack}
-                    className={`flex gap-1 py-3 w-full px-4 rounded-xl font-medium flex items-center justify-center space-x-2 bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 bg-orange-500 hover:bg-orange-600`}
+                    className={`flex gap-1 py-3 w-full px-4 rounded-xl font-medium flex text-white items-center justify-center space-x-2 bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 bg-orange-500 hover:bg-orange-600`}
                   >
                     <Home className="w-5 h-5" /> Back to home
                   </button>

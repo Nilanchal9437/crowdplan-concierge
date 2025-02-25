@@ -6,7 +6,7 @@ function Result() {
   const answers =
     (location.state?.answers as {
       [key: string | number]: string | number;
-    }[]) || {}; // ✅ Type assertion
+    }[]) || []; // ✅ Type assertion
   const navigate = useNavigate();
 
   return (
@@ -50,7 +50,7 @@ function Result() {
           {/* Answers List */}
           <div className="p-6 sm:p-8 space-y-6">
             <div className="space-y-4">
-              {answers.map((item, index) => (
+              {Array.isArray(answers) && answers.length > 0 ? answers.map((item, index) => (
                 <div
                   key={index}
                   className={`p-4 rounded-xl dark:bg-gray-700 bg-gray-100`}
@@ -64,7 +64,7 @@ function Result() {
                    Answer:-&nbsp;({item.option_id})&nbsp;{item.answer}
                   </p>
                 </div>
-              ))}
+              )) : null}
             </div>
             {/* Action Buttons */}
             <div className="mt-8">
