@@ -1,12 +1,28 @@
+import * as React from "react";
 import { Home } from "lucide-react";
-import { useLocation, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
+import { getItem, clearStore } from "~/db";
 
 function Result() {
-  const location = useLocation();
-  const answers =
-    (location.state?.answers as {
-      [key: string | number]: string | number;
-    }[]) || []; // ✅ Type assertion
+  const [answers, setAnswers] = React.useState<
+    { [key: string | number]: string | number }[]
+  >([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    setLoading(true);
+    getItem<{ [key: string | number]: string | number }[]>("quiz").then(
+      (storedData) => {
+        if (storedData) {
+          setAnswers(storedData);
+        } else {
+          setAnswers([]);
+        }
+      }
+    );
+    setLoading(false);
+  }, []);
+
   const navigate = useNavigate();
 
   return (
@@ -50,26 +66,44 @@ function Result() {
           {/* Answers List */}
           <div className="p-6 sm:p-8 space-y-6">
             <div className="space-y-4">
-              {Array.isArray(answers) && answers.length > 0 ? answers.map((item, index) => (
-                <div
-                  key={index}
-                  className={`p-4 rounded-xl dark:bg-gray-700 bg-gray-100`}
-                >
-                  <h3
-                    className={`font-medium dark:text-gray-200 text-gray-700`}
-                  >
-                    (Q{index+1}).&nbsp;{item.question}
-                  </h3>
-                  <p className={`mt-1 dark:text-orange-400 text-orange-600`}>
-                   Answer:-&nbsp;({item.option_id})&nbsp;{item.answer}
-                  </p>
+              {loading ? (
+                <div className="flex animate-pulse space-x-4">
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="space-y-3">
+                      {[...Array(20)].map((item, index) => (
+                        <div
+                          className="bg-gray-200 p-10 rounded-xl"
+                          key={index}
+                        ></div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              )) : null}
+              ) : Array.isArray(answers) && answers.length > 0 ? (
+                answers.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 rounded-xl dark:bg-gray-700 bg-gray-100`}
+                  >
+                    <h3
+                      className={`font-medium dark:text-gray-200 text-gray-700`}
+                    >
+                      (Q{index + 1}).&nbsp;{item.question}
+                    </h3>
+                    <p className={`mt-1 dark:text-orange-400 text-orange-600`}>
+                      A:-&nbsp;{item.answer}
+                    </p>
+                  </div>
+                ))
+              ) : null}
             </div>
             {/* Action Buttons */}
             <div className="mt-8">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => {
+                  clearStore();
+                  navigate("/");
+                }}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium flex items-center justify-center space-x-2 bg-orange-600 dark:hover:bg-gray-600 text-white hover:bg-orange-600 mx-auto`}
               >
                 <Home className="w-5 h-5" />

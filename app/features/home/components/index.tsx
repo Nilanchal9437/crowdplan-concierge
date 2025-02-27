@@ -11,6 +11,8 @@ import Blog from "~/features/home/components/Blog";
 import ContactUs from "~/features/home/components/ContactUs";
 import Services from "~/features/home/components/Services";
 
+import { clearStore } from "~/db";
+
 function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
@@ -22,7 +24,9 @@ function Home() {
           </h2>
           <div className="flex justify-center gap-4 mt-4 mb-4 w-[300px] mx-auto">
             <button className="flex items-center gap-2 bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition-colors text-center">
-              <Link to="/quiz">Take the Compatibility Quiz</Link>
+              <Link to="/quiz" onClick={() => clearStore()}>
+                Take the Compatibility Quiz
+              </Link>
             </button>
           </div>
         </section>

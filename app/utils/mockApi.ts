@@ -7,7 +7,8 @@ export type QuizCategory = {
 export type QuizQuestion = {
   id: number; // ✅ Ensure every question has an ID
   question: string;
-  options: { [key: string]: string }; // ✅ Matches the new JSON structure
+  type?: "string" | "element";
+  options?: { [key: string]: string }; // ✅ Matches the new JSON structure
 };
 
 export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
@@ -15,8 +16,49 @@ export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
     setTimeout(() => {
       resolve([
         {
-          category: "Social Orientation - Introvert vs. Extrovert",
+          category: "User Details",
           category_id: 1,
+          questions: [
+            {
+              id: 1,
+              question: "What is your name?",
+              type: "element", 
+              options: {
+                "1": "FullName", 
+              },
+            },
+            {
+              id: 2,
+              question: "What is your Age?",
+              options: {
+                "1": "0 - 20",
+                "2": "21 - 40",
+                "3": "41 -  60",
+                "4": "61 - 100",
+              },
+            },
+            {
+              id: 3,
+              question: "What is you Gender?",
+              options: {
+                "1": "Male",
+                "2": "Female",
+                "3": "Others",
+              },
+            }, 
+            {
+              id: 4,
+              question: "What is your location or adress?",
+              type: "element", 
+              options: {
+                "1": "location", 
+              },
+            }, 
+          ],
+        },
+        {
+          category: "Social Orientation - Introvert vs. Extrovert",
+          category_id: 2,
           questions: [
             {
               id: 1,
@@ -124,7 +166,7 @@ export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
         },
         {
           category: "Adventure Level - Risk-Taking vs. Comfort-Seeking",
-          category_id: 2,
+          category_id: 3,
           questions: [
             {
               id: 1,
@@ -234,7 +276,7 @@ export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
         {
           category:
             "Conflict Resolution Style - Avoidant, Confrontational, Compromising",
-          category_id: 3,
+          category_id: 4,
           questions: [
             {
               id: 1,
@@ -342,7 +384,7 @@ export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
         },
         {
           category: "Activity Preference - Physical vs. Mental Engagement",
-          category_id: 4,
+          category_id: 5,
           questions: [
             {
               id: 1,
@@ -450,7 +492,7 @@ export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
         {
           category:
             "Time Commitment - Short & Spontaneous vs. Planned & Extended",
-          category_id: 5,
+          category_id: 6,
           questions: [
             {
               id: 1,
@@ -560,7 +602,7 @@ export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
         },
         {
           category: "Group Size Comfort - Small, Medium, or Large Gatherings",
-          category_id: 6,
+          category_id: 7,
           questions: [
             {
               id: 1,
@@ -673,7 +715,7 @@ export async function fetchQuizQuestions(): Promise<QuizCategory[]> {
         },
         {
           category: "Group Size Comfort - Small, Medium, or Large Gatherings",
-          category_id: 7,
+          category_id: 8,
           questions: [
             {
               id: 1,

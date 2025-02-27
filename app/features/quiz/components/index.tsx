@@ -6,9 +6,15 @@ import {
   QuizCategory,
   QuizQuestion,
 } from "~/utils/mockApi";
+import {
+  UserFullName,
+  UserLocation,
+} from "~/features/quiz/components/userDetails";
+import { getItem, setItem, clearStore } from "~/db";
 
 function Quiz() {
   const navigate = useNavigate();
+
   const [categories, setCategories] = React.useState<QuizCategory[]>([]); // ✅ Uses QuizCategory[]
   const [currentCategoryIndex, setCurrentCategoryIndex] = React.useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
@@ -30,9 +36,52 @@ function Quiz() {
       .then((data: QuizCategory[]) => {
         // ✅ Ensure QuizCategory[] is expected
         setCategories(data);
-        setCurrentCategory(data[0]);
-        setCurrentQuestions(data[0].questions);
-        setCurrentQuestion(data[0].questions[0]);
+        getItem<{ [key: string | number]: string | number }[]>("quiz").then(
+          (storedData) => {
+            if (storedData) {
+              setAnswers(storedData);
+            } else {
+              setAnswers([]);
+            }
+          }
+        );
+        getItem<number>("currentCategoryIndex").then((storedData) => {
+          if (storedData) {
+            setCurrentCategoryIndex(storedData);
+          } else {
+            setCurrentCategoryIndex(0);
+          }
+        });
+        getItem<number>("currentQuestionIndex").then((storedData) => {
+          if (storedData) {
+            setCurrentQuestionIndex(storedData);
+          } else {
+            setCurrentQuestionIndex(0);
+          }
+        });
+        getItem<QuizCategory | null>("currentCategory").then((storedData) => {
+          if (storedData) {
+            setCurrentCategory(storedData);
+          } else {
+            setCurrentCategory(data[0]);
+          }
+        });
+        getItem<QuizQuestion[] | null>("currentQuestions").then(
+          (storedData) => {
+            if (storedData) {
+              setCurrentQuestions(storedData);
+            } else {
+              setCurrentQuestions(data[0].questions);
+            }
+          }
+        );
+        getItem<QuizQuestion | null>("currentQuestion").then((storedData) => {
+          if (storedData) {
+            setCurrentQuestion(storedData);
+          } else {
+            setCurrentQuestion(data[0].questions[0]);
+          }
+        });
         setLoading(false);
       })
       .catch((error) => {
@@ -41,6 +90,26 @@ function Quiz() {
       });
   }, []);
 
+  // Get the current absolute question number in the quiz (across all categories)
+  const getCurrentQuestionNumber = () => {
+    let count = 0;
+    for (let i = 0; i < currentCategoryIndex; i++) {
+      count += categories[i].questions.length;
+    }
+    return count + currentQuestionIndex + 1;
+  };
+
+  const saveData = async (
+    data: { [key: string | number]: string | number }[]
+  ) => {
+    await setItem("quiz", data);
+    await setItem("currentCategoryIndex", currentCategoryIndex);
+    await setItem("currentQuestionIndex", currentQuestionIndex);
+    await setItem("currentCategory", currentCategory);
+    await setItem("currentQuestions", currentQuestions);
+    await setItem("currentQuestion", currentQuestion);
+  };
+
   // ✅ Handle answer selection
   const handleSelectAnswer = (
     answer: string,
@@ -48,12 +117,14 @@ function Quiz() {
     question: any
   ) => {
     const data = [...answers];
-    data[Number(`${currentCategoryIndex}${currentQuestionIndex}`)] = {
+
+    data[getCurrentQuestionNumber() - 1] = {
       question: question,
       answer: answer,
       category_id: categories[currentCategoryIndex].category_id,
       option_id: option_id,
     };
+    saveData(data);
     setAnswers(data);
   };
 
@@ -69,8 +140,12 @@ function Quiz() {
       setCurrentCategoryIndex(currentCategoryIndex + 1);
       setCurrentCategory(categories[currentCategoryIndex + 1]);
       setCurrentQuestionIndex(0); // Reset question index for new category
-      setCurrentQuestions(currentCategory?.questions ?? null);
-      setCurrentQuestion(currentCategory?.questions[0] ?? null);
+      setCurrentQuestions(
+        categories[currentCategoryIndex + 1]?.questions ?? null
+      );
+      setCurrentQuestion(
+        categories[currentCategoryIndex + 1]?.questions[0] ?? null
+      );
     } else {
       navigate("/result", { state: { answers } });
     }
@@ -78,7 +153,12 @@ function Quiz() {
 
   // ✅ Handle "Back" or "Back to recheck" button
   const handleBack = () => {
-    navigate("/");
+    if (getCurrentQuestionNumber() > 1) {
+      clearStore();
+      window.location.reload();
+    } else {
+      navigate("/");
+    }
   };
 
   // Get the total number of questions across all categories
@@ -87,15 +167,6 @@ function Quiz() {
       (total, category) => total + category.questions.length,
       0
     );
-  };
-
-  // Get the current absolute question number in the quiz (across all categories)
-  const getCurrentQuestionNumber = () => {
-    let count = 0;
-    for (let i = 0; i < currentCategoryIndex; i++) {
-      count += categories[i].questions.length;
-    }
-    return count + currentQuestionIndex + 1;
   };
 
   return (
@@ -173,31 +244,61 @@ function Quiz() {
                 <div className="space-y-1">
                   {/* Render answer options */}
                   {Object.entries(currentQuestion?.options ?? {}).map(
-                    ([key, option], index) => (
-                      <div
-                        key={key}
-                        onClick={() =>
-                          handleSelectAnswer(
-                            option,
-                            key,
-                            currentQuestion?.question
-                          )
-                        }
-                        className={`p-4 rounded-xl transition-all duration-300 cursor-pointer ${
-                          answers[
-                            Number(
-                              `${currentCategoryIndex}${currentQuestionIndex}`
+                    ([key, option], index) =>
+                      currentQuestion?.type === "element" &&
+                      currentQuestion?.id === 1 ? (
+                        <UserFullName
+                          key={key}
+                          fullName={
+                            answers[getCurrentQuestionNumber() - 1]?.answer ??
+                            ""
+                          }
+                          setFullName={(event) => {
+                            handleSelectAnswer(
+                              event,
+                              key,
+                              currentQuestion?.question
+                            );
+                          }}
+                        />
+                      ) : currentQuestion?.type === "element" &&
+                        currentQuestion?.id === 4 ? (
+                        <UserLocation
+                          key={key}
+                          location={`${
+                            answers[getCurrentQuestionNumber() - 1]?.answer ??
+                            ""
+                          }`}
+                          setLocation={(event) => {
+                            handleSelectAnswer(
+                              `${event}`,
+                              key,
+                              currentQuestion?.question
+                            );
+                          }}
+                        />
+                      ) : (
+                        <div
+                          key={key}
+                          onClick={() =>
+                            handleSelectAnswer(
+                              option,
+                              key,
+                              currentQuestion?.question
                             )
-                          ]?.answer === option
-                            ? "dark:bg-orange-600 dark:text-white bg-orange-500 text-white"
-                            : "dark:bg-gray-700 dark:hover:bg-gray-600 bg-gray-100 hover:bg-gray-200"
-                        }`}
-                      >
-                        <span className="text-base sm:text-lg">
-                          ({index + 1}).&nbsp;&nbsp;{option}
-                        </span>
-                      </div>
-                    )
+                          }
+                          className={`p-4 rounded-xl transition-all duration-300 cursor-pointer ${
+                            answers[getCurrentQuestionNumber() - 1]?.answer ===
+                            option
+                              ? "dark:bg-orange-600 dark:text-white bg-orange-500 text-white"
+                              : "dark:bg-gray-700 dark:hover:bg-gray-600 bg-gray-100 hover:bg-gray-200"
+                          }`}
+                        >
+                          <span className="text-base sm:text-lg">
+                            ({index + 1}).&nbsp;&nbsp;{option}
+                          </span>
+                        </div>
+                      )
                   )}
                 </div>
                 <div className="flex item-center gap-2 jutify-between">
@@ -205,19 +306,19 @@ function Quiz() {
                     onClick={handleBack}
                     className={`flex gap-1 py-3 w-full px-4 rounded-xl font-medium flex text-white items-center justify-center space-x-2 bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 bg-orange-500 hover:bg-orange-600`}
                   >
-                    <Home className="w-5 h-5" /> Back to home
+                    {getCurrentQuestionNumber() > 1 ? (
+                      "Reset Quiz"
+                    ) : (
+                      <>
+                        <Home className="w-5 h-5" /> Back to home
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={handleNext}
-                    disabled={
-                      !answers[
-                        Number(`${currentCategoryIndex}${currentQuestionIndex}`)
-                      ]?.answer
-                    }
+                    disabled={!answers[getCurrentQuestionNumber() - 1]?.answer}
                     className={`w-full py-4 px-6 rounded-xl font-medium text-white transition-all duration-300 ${
-                      answers[
-                        Number(`${currentCategoryIndex}${currentQuestionIndex}`)
-                      ]?.answer
+                      answers[getCurrentQuestionNumber() - 1]?.answer
                         ? "dark:bg-orange-600 dark:hover:bg-orange-700 bg-orange-500 hover:bg-orange-600"
                         : "bg-gray-400 cursor-not-allowed"
                     }`}
@@ -248,7 +349,9 @@ function Quiz() {
             <div
               className="h-1 bg-orange-500"
               style={{
-                width: `${(currentCategoryIndex / categories.length) * 100}%`,
+                width: `${
+                  (getCurrentQuestionNumber() / getTotalQuestions()) * 100
+                }%`,
               }}
             />
           )}
