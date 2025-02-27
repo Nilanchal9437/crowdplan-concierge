@@ -167,7 +167,7 @@ function Quiz() {
             ) : (
               <>
                 <h2 className="text-lg sm:text-xl font-medium">
-                  (Q{getCurrentQuestionNumber()}).{" "}
+                  ({getCurrentQuestionNumber()}).{" "}
                   {currentQuestion?.question ?? ""}
                 </h2>
                 <div className="space-y-1">
